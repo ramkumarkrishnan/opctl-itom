@@ -1,0 +1,28 @@
+{
+  "eventType":"com.oraclecloud.operatorcontrol.createoperatorcontrol",
+  "cloudEventsVersion":"0.1",
+  "eventTypeVersion":"2.0",
+  "source":"OperatorAccessControl",
+  "eventTime":"2022-06-29T07:24:58Z",
+  "contentType":"application/json",
+  "data":
+  {
+    "compartmentId":"ocid1.compartment.oc1..aaaaaaaakb3q5csiibu3p5ycutdk6e3vunp26yu7a3cbfjyolmqn5xeq22dq",
+    "compartmentName":"opctlitom_compartment",
+    "resourceName":"opctlitom_create_test_06",
+    "resourceId":"ocid1.opctloperatorcontrol.oc1.iad.aaaaaaaawd2kr253ixlmo2fugo3rwd2koim2iruwgexjypkd6r335v43wpcq",
+    "availabilityDomain":"AD1",
+    "additionalDetails":
+    {
+      "operatorcontrol_ocid":"ocid1.opctloperatorcontrol.oc1.iad.aaaaaaaawd2kr253ixlmo2fugo3rwd2koim2iruwgexjypkd6r335v43wpcq",
+      "operatorcontrol_name":"opctlitom_create_test_06"
+    }
+  },
+  "eventID":"6f54e004-f67e-446c-9c0f-10b94ab4ca55",
+  "extensions":
+  {
+    "compartmentId":"ocid1.compartment.oc1..aaaaaaaakb3q5csiibu3p5ycutdk6e3vunp26yu7a3cbfjyolmqn5xeq22dq"
+  }
+}
+
+// CREATE, DELETE, UPDATE
