@@ -1,7 +1,8 @@
 schema_version: 20180708
 name: opctlitom
-version: 0.0.55
+version: 0.0.100
 runtime: java
 build_image: fnproject/fn-java-fdk-build:jdk17-1.0.149
 run_image: fnproject/fn-java-fdk:jre17-1.0.149
 cmd: com.opctlitom.fn.OpctlItomRequest::handleRequest
+timeout: 300

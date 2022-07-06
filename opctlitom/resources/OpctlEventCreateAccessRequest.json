@@ -30,29 +30,4 @@
   }
 }
 
-// CREATE,EXPIRED,EXTEND,REJECT,REVOKE,CLOSED
-{
-  "eventType": "com.oraclecloud.operatorcontrol.createaccessrequest",
-  "cloudEventsVersion": "0.1",
-  "eventTypeVersion": "2.0",
-  "source": "OperatorAccessControl",
-  "eventTime": "2019-08-16T15:09:04.550Z",
-  "contentType": "application/json",
-  "data": {
-    "compartmentId": "ocid1.compartment.oc1..unique_ID",
-    "compartmentName": "example_compartment",
-    "resourceName": "OpCtl Resource",
-    "resourceId": "ocid1.example_regional_resource.oc1.phx.unique_ID",
-    "availabilityDomain": "availability_domain"
-  },
-  "additionalDetails": {
-    "opCtlId": "OpCtl ocid",
-    "opCtlName": "OpCtl Name"
-  },
-  "eventID": "unique_ID",
-  "extensions": {
-    "compartmentId": "ocid1.compartment.oc1..unique_ID"
-  }
-}
-
 

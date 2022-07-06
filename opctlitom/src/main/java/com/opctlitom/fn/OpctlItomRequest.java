@@ -16,8 +16,15 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.oracle.bmc.Region;
+import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider;
+import com.oracle.bmc.secrets.SecretsClient;
+import com.oracle.bmc.secrets.model.Base64SecretBundleContentDetails;
+import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
+import com.oracle.bmc.secrets.responses.GetSecretBundleResponse;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -29,9 +36,25 @@ import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
 
 public class OpctlItomRequest {
-
+    private String secretOCID = System.getenv("OPCTLITOM_SECRET_OCID");
+    private SecretsClient secretsClient;
     public OpctlItomRequest() {
-        ;
+        BasicAuthenticationDetailsProvider provider = null;
+        String version = System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION");
+        if( version != null ) { // if the function runs in Fn Server in cloud
+            provider = ResourcePrincipalAuthenticationDetailsProvider.builder().build();
+        }
+        else {  // if the function runs in Fn Server on the local host
+            try {
+                provider = new ConfigFileAuthenticationDetailsProvider(
+                    "/Users/ramkrish/.oci/config", "DEFAULT");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        System.out.println("Provider: " + provider);
+        secretsClient = new SecretsClient(provider);
+        secretsClient.setRegion(Region.US_ASHBURN_1);
     }
 
     public String handleRequest(InputEvent rawInput) {
@@ -44,16 +67,20 @@ public class OpctlItomRequest {
             conn.setRequestProperty("Accept", "application/json");
             conn.setRequestProperty("Content-Type", "application/json");
 
-            String userCredentials = "admin:P0/Bw-6emNvK";
-            String auth = "Basic " +
+            // String userCredentials = "admin:P0/Bw-6emNvK"; // hard-coded
+            String userCredentials = getSecretValue(secretOCID); // from Vault
+            String secretValueDecodedString =
                 Base64.encodeBase64String(userCredentials.getBytes());
+
+            String auth = "Basic " + secretValueDecodedString;
             conn.setRequestProperty("Authorization", auth);
 
             String inputEventJson = rawInput.consumeBody(this::readData);
-            System.out.println("INPUT:" + inputEventJson);
             String data = getItomJson(inputEventJson);
+
+            // For Fn Invoke from Local Host - TEST
             if (data == null) {
-                data = "NO DATA";
+                data = "{\"short_description\":\"Fn Invoke from Cmd Line\"}";
             }
             byte[] out = data.getBytes(StandardCharsets.UTF_8);
             OutputStream str = conn.getOutputStream();
@@ -62,12 +89,12 @@ public class OpctlItomRequest {
             String err = "HTTP code:"
                 + conn.getResponseCode() + ":"
                 + conn.getResponseMessage()
-                + " INPUT:" + inputEventJson
-                + ": TS: "
-                + LocalDateTime.now()
-                .format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"))
-                + " OUTPUT: "
-                + data;
+                + ": SecretsClient: " +  secretsClient.toString()
+                + ": SecretsOCID: " + secretOCID
+                + ": AUTH: " + auth
+                + ": INPUT:" + inputEventJson
+                + ": TS: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"))
+                + ": OUTPUT: " + data;
             if (conn.getResponseCode() != 201)
                 throw new RuntimeException("FAILED:" + err);
             else
@@ -79,6 +106,29 @@ public class OpctlItomRequest {
             e.printStackTrace();
         }
         return "0";
+    }
+
+    private String getSecretValue(String secretOCID) throws IOException {
+        GetSecretBundleRequest getSecretBundleRequest =
+            GetSecretBundleRequest
+            .builder()
+            .secretId(secretOCID)
+            .stage(GetSecretBundleRequest.Stage.Current)
+            .build();
+
+        GetSecretBundleResponse getSecretBundleResponse =
+            secretsClient.getSecretBundle(getSecretBundleRequest);
+
+        Base64SecretBundleContentDetails base64SecretBundleContentDetails =
+            (Base64SecretBundleContentDetails)
+            getSecretBundleResponse
+            .getSecretBundle()
+            .getSecretBundleContent();
+
+        byte[] secretValueDecoded =
+            Base64.decodeBase64(base64SecretBundleContentDetails.getContent());
+
+        return new String(secretValueDecoded);
     }
 
     private String readData(InputStream s) {
@@ -160,7 +210,10 @@ public class OpctlItomRequest {
                 + ",reason:" + aDtlsObject.get("reason").getAsString();
         }
         else if (operation.contains("createoperatorcontrol"))  {
-            description += "Comment:" + "DUMMY DESCRIPTION";
+            description += "description:" + "DUMMY DESCRIPTION at TS:" +
+                LocalDateTime.now()
+                .format(DateTimeFormatter
+                .ofPattern("MM-dd-yyyy HH:mm:ss"));
         }
         description += "}";
         snowIncident.setDescription(description);
